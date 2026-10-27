@@ -1,0 +1,81 @@
+/* ==========================================================================
+   WHISPER PRIVATE MESSENGER - RESPONSIVE STYLES
+   Mobile, Tablet, and Desktop Breakpoints
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .app-header {
+        padding: 0 16px;
+    }
+
+    .brand-title {
+        font-size: 1.1rem;
+    }
+
+    .brand-badge {
+        display: none;
+    }
+
+    .app-container {
+        position: relative;
+    }
+
+    .app-sidebar {
+        width: 100%;
+        min-width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 20;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* When conversation is active on mobile, hide sidebar */
+    .app-container.chat-active .app-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .app-chat-main {
+        width: 100%;
+    }
+
+    .mobile-back-btn {
+        display: inline-flex !important;
+    }
+
+    .chat-top-bar {
+        padding: 0 16px;
+    }
+
+    .chat-input-bar {
+        padding: 12px 16px;
+    }
+
+    .message-row {
+        max-width: 85%;
+    }
+
+    .modal-dialog {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-header, .modal-footer {
+        padding: 14px 16px;
+    }
+
+    .safety-number-grid {
+        grid-template-columns: repeat(2, 1fr);
+        font-size: 0.85rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-back-btn {
+        display: none !important;
+    }
+}

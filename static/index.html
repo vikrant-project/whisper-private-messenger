@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper — Zero-Signup End-to-End Encrypted Private Messaging</title>
+    <meta name="description" content="Chat privately without signing up, logging in, or providing phone or email. True end-to-end encryption with forward secrecy and local device identity ownership.">
+    <meta name="theme-color" content="#06090e">
+    <link rel="icon" type="image/svg+xml" href="/static/assets/logo.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="brand-wrapper">
+            <img src="/static/assets/logo.svg" alt="Whisper Shield Logo" class="brand-logo" id="appLogo">
+            <h1 class="brand-title">Whisper</h1>
+            <span class="brand-badge" id="securityStatusBadge">E2EE Active</span>
+        </div>
+
+        <div class="header-actions">
+            <!-- Security limits info button -->
+            <button class="btn-icon" id="btnInfoSecurity" title="Security Model &amp; Limits" aria-label="Security Limits">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </button>
+
+            <!-- Backup & Recovery Button -->
+            <button class="btn-icon" id="btnOpenBackup" title="Encrypted Backup &amp; Recovery" aria-label="Backup Identity">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </button>
+
+            <!-- User Identity Chip -->
+            <div class="user-identity-chip" id="userIdentityChip" title="Click to view your cryptographic identity">
+                <div class="chip-avatar" id="myAvatar">?</div>
+                <span class="chip-name" id="myUsernameDisplay">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-container" id="appMainContainer">
+        
+        <!-- Left Sidebar: Conversations & Requests -->
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title-row">
+                    <span class="sidebar-heading">Conversations</span>
+                    <button class="btn btn-primary btn-sm" id="btnNewChat">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>New Chat</span>
+                    </button>
+                </div>
+
+                <!-- Navigation Tabs: Contacts vs Requests -->
+                <div class="tabs-nav" role="tablist">
+                    <button class="tab-btn active" id="tabBtnContacts" role="tab" aria-selected="true">
+                        <span>Contacts</span>
+                        <span class="badge-count" id="contactsBadgeCount" style="display: none;">0</span>
+                    </button>
+                    <button class="tab-btn" id="tabBtnRequests" role="tab" aria-selected="false">
+                        <span>Requests</span>
+                        <span class="badge-count" id="requestsBadgeCount" style="display: none;">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content: Contacts -->
+            <div class="tab-content" id="contactsTabContent">
+                <div class="empty-state" id="contactsEmptyState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <p>No active conversations yet. Click <strong>New Chat</strong> to find someone by exact username.</p>
+                </div>
+                <div id="contactsListContainer"></div>
+            </div>
+
+            <!-- Tab Content: Requests -->
+            <div class="tab-content" id="requestsTabContent" style="display: none;">
+                <div class="empty-state" id="requestsEmptyState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <p>No pending chat requests. When other users find your username, requests will appear here.</p>
+                </div>
+                <div id="requestsListContainer"></div>
+            </div>
+        </aside>
+
+        <!-- Right Main: Active Chat or Welcome Placeholder -->
+        <section class="app-chat-main" id="appChatMain">
+            
+            <!-- Default Welcome Screen when no contact selected -->
+            <div class="empty-state" id="noChatSelectedState" style="margin: auto;">
+                <img src="/static/assets/logo.svg" alt="Whisper" style="width: 80px; height: 80px; opacity: 0.85; margin-bottom: 12px;">
+                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--text-primary);">Zero-Knowledge Private Messaging</h2>
+                <p style="max-width: 420px; line-height: 1.6;">
+                    Messages are end-to-end encrypted with forward secrecy directly on your device. The server routes encrypted ciphertexts and never sees your conversations.
+                </p>
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-secondary" id="btnWelcomeNewChat">Find a Contact</button>
+                </div>
+            </div>
+
+            <!-- Active Chat View (hidden until contact selected) -->
+            <div id="activeChatView" style="display: none; height: 100%; flex-direction: column;">
+                
+                <!-- Chat Top Bar -->
+                <div class="chat-top-bar">
+                    <div class="chat-partner-info">
+                        <button class="btn-icon mobile-back-btn" id="btnMobileBack" aria-label="Back to contacts">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <div class="contact-avatar" id="activeChatAvatar">?</div>
+                        <div>
+                            <div class="chat-partner-name" id="activeChatUsername">Contact</div>
+                            <div class="chat-partner-status" id="activeChatStatus">
+                                <span class="status-dot"></span>
+                                <span id="activeChatStatusText">Offline</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-top-actions">
+                        <button class="btn-icon" id="btnVerifySafetyNumber" title="Verify Safety Number &amp; QR Code" aria-label="Verify Safety Number">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <polyline points="9 12 11 14 15 10"></polyline>
+                            </svg>
+                        </button>
+                        <button class="btn-icon" id="btnDeleteChat" title="Delete Conversation" aria-label="Delete Conversation">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                        <button class="btn-icon" id="btnBlockContact" title="Block User" aria-label="Block User">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- E2EE Security Banner -->
+                <div class="security-banner">
+                    <div class="security-banner-text">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span>End-to-End Encrypted &bull; Forward Secrecy Active</span>
+                    </div>
+                    <button class="security-verify-btn" id="btnBannerVerify">Verify Keys</button>
+                </div>
+
+                <!-- Messages Stream -->
+                <div class="chat-messages-container" id="chatMessagesContainer"></div>
+
+                <!-- Typing indicator -->
+                <div class="typing-indicator-box" id="typingIndicator" style="display: none;">
+                    <span id="typingUsername">Contact</span> is typing
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+
+                <!-- Message Input Bar -->
+                <form class="chat-input-bar" id="messageInputForm">
+                    <input type="text" class="chat-input-field" id="messageInputField" placeholder="Type an encrypted message..." autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary" id="btnSendMessage" aria-label="Send Message">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span>Send</span>
+                    </button>
+                </form>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- =====================================================================
+         MODALS
+         ===================================================================== -->
+
+    <!-- Modal 1: First-Time Setup / Username Choice -->
+    <div class="modal-backdrop" id="modalSetupIdentity">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="/static/assets/logo.svg" alt="Whisper" style="width: 28px; height: 28px;">
+                    <h2 class="modal-title">Welcome to Whisper</h2>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <strong>Zero-Signup Private Messaging:</strong> No email, no phone number, and no passwords required. Your cryptographic identity will be generated directly on this device.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="setupUsernameInput">Choose a Unique Username</label>
+                    <input type="text" class="form-input" id="setupUsernameInput" placeholder="e.g. satoshi, alex_01" maxlength="24" required>
+                    <span class="form-help">3–24 characters: lowercase letters, numbers, hyphens, and underscores.</span>
+                </div>
+
+                <div class="info-box warning">
+                    <strong>⚠️ Important Device Storage Notice:</strong> Your identity keys are stored exclusively in your browser. Clearing your cookies or browsing data will remove access unless you export an encrypted backup file.
+                </div>
+
+                <div style="text-align: center; margin-top: 8px;">
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">Already have an identity backup?</span>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnSwitchToRestore" style="margin-left: 8px;">Restore from File</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSubmitIdentitySetup">
+                    Generate Keys &amp; Claim Username
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Restore from Encrypted Backup -->
+    <div class="modal-backdrop" id="modalRestoreIdentity">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Restore Encrypted Identity</h2>
+                <button class="btn-icon" id="btnCloseRestore" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.88rem; color: var(--text-secondary);">
+                    Upload your <code>.enc</code> backup file and enter the passphrase used during backup export to restore your cryptographic identity and username ownership.
+                </p>
+
+                <div class="form-group">
+                    <label class="form-label" for="restoreFileInput">Select Backup File (.enc)</label>
+                    <input type="file" class="form-input" id="restoreFileInput" accept=".enc,.json">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="restorePassphraseInput">Passphrase</label>
+                    <input type="password" class="form-input" id="restorePassphraseInput" placeholder="Enter backup passphrase">
+                </div>
+
+                <div id="restoreStatusBox" style="display: none;" class="info-box danger"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelRestore">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitRestore">Restore &amp; Authenticate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Export Encrypted Backup -->
+    <div class="modal-backdrop" id="modalBackupIdentity">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Export Encrypted Backup</h2>
+                <button class="btn-icon" id="btnCloseBackup" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <strong>Zero-Knowledge Backup:</strong> Your private keys are encrypted locally using <strong>PBKDF2 (100,000 iterations)</strong> and <strong>AES-256-GCM</strong> before downloading. Only you can decrypt it with your passphrase.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="backupPassphraseInput">Create a Strong Backup Passphrase</label>
+                    <input type="password" class="form-input" id="backupPassphraseInput" placeholder="Minimum 8 characters">
+                    
+                    <div class="strength-meter-bar">
+                        <div class="strength-meter-fill" id="passphraseStrengthBar"></div>
+                    </div>
+                    <span class="form-help" id="passphraseStrengthText">Passphrase strength: None</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="backupPassphraseConfirm">Confirm Passphrase</label>
+                    <input type="password" class="form-input" id="backupPassphraseConfirm" placeholder="Re-enter passphrase">
+                </div>
+
+                <div id="backupErrorBox" style="display: none;" class="info-box danger"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelBackup">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitExportBackup">
+                    Encrypt &amp; Download Backup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: New Chat / User Lookup -->
+    <div class="modal-backdrop" id="modalNewChat">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Find Contact &amp; Send Request</h2>
+                <button class="btn-icon" id="btnCloseNewChat" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <strong>Anti-Enumeration Protection:</strong> You must enter the exact username. Messaging begins once the recipient accepts your chat request.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="lookupUsernameInput">Exact Username</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" class="form-input" id="lookupUsernameInput" placeholder="Enter exact username" style="flex: 1;" required>
+                        <button type="button" class="btn btn-secondary" id="btnExecuteLookup">Search</button>
+                    </div>
+                </div>
+
+                <!-- Lookup Result Card -->
+                <div id="lookupResultCard" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="contact-avatar" id="lookupAvatar">?</div>
+                            <div>
+                                <strong id="lookupFoundName" style="color: var(--text-primary);">username</strong>
+                                <div id="lookupStatusText" style="font-size: 0.75rem; color: var(--text-muted);">Registered user</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="requestIntroInput">Optional Introductory Note</label>
+                        <input type="text" class="form-input" id="requestIntroInput" placeholder="e.g. Hey, it's Alice!">
+                    </div>
+
+                    <div style="margin-top: 14px;">
+                        <button type="button" class="btn btn-primary" id="btnSendChatRequestSubmit" style="width: 100%;">
+                            Send Encrypted Chat Request
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lookupErrorBox" style="display: none;" class="info-box danger"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelNewChat">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Safety Number & QR Code Identity Verification -->
+    <div class="modal-backdrop" id="modalSafetyNumber">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Verify Safety Number</h2>
+                <button class="btn-icon" id="btnCloseSafetyNumber" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    Compare this safety number with <strong id="safetyContactName">Contact</strong> out-of-band, or scan the QR code to verify you are communicating directly without a man-in-the-middle.
+                </p>
+
+                <!-- QR Code Box -->
+                <div class="qr-box" id="safetyQrCodeContainer"></div>
+
+                <!-- 60-digit formatted grid -->
+                <div class="safety-number-grid" id="safetyNumberDisplay">
+                    <div>00000</div><div>00000</div><div>00000</div>
+                    <div>00000</div><div>00000</div><div>00000</div>
+                    <div>00000</div><div>00000</div><div>00000</div>
+                    <div>00000</div><div>00000</div><div>00000</div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Key Change Protection:</strong> If this contact's key changes due to device replacement, Whisper will immediately warn you before transmitting any further messages.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnDoneSafetyNumber">Verified &amp; Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 6: Realistic Security Limits & Threat Model -->
+    <div class="modal-backdrop" id="modalSecurityLimits">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Security Model &amp; Realistic Limits</h2>
+                <button class="btn-icon" id="btnCloseSecurityLimits" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <strong>Cryptographic Assurances:</strong>
+                    <ul style="margin-left: 18px; margin-top: 6px;">
+                        <li><strong>End-to-End Encryption:</strong> Only you and your recipient possess the keys to decrypt message contents.</li>
+                        <li><strong>Forward Secrecy:</strong> Ephemeral Diffie-Hellman ratcheting ensures past messages cannot be decrypted even if keys are compromised later.</li>
+                        <li><strong>Device Ownership Binding:</strong> Usernames cannot be spoofed or claimed without the authentic Ed25519 identity key.</li>
+                    </ul>
+                </div>
+
+                <div class="info-box warning">
+                    <strong>Honest Limitations &amp; What Cannot Be Protected:</strong>
+                    <ul style="margin-left: 18px; margin-top: 6px;">
+                        <li><strong>Compromised Endpoint:</strong> If your computer, phone, or browser has malware, screen recorders, or physical intrusion, encryption in memory cannot defend against it.</li>
+                        <li><strong>Connection Metadata:</strong> The server routes packets and therefore observes IP addresses, timestamps, and message frequencies. We do not claim "100% anonymity." For network traffic masking, combine with Tor or a trusted VPN.</li>
+                        <li><strong>Device Storage Loss:</strong> If you clear browser cookies or discard your device without an encrypted backup file, your identity is unrecoverable.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnDoneSecurityLimits">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendored Cryptography and QR Scripts -->
+    <script src="/static/js/crypto/nacl.min.js"></script>
+    <script src="/static/js/crypto/nacl-util.min.js"></script>
+    <script src="/static/js/qrcode.min.js"></script>
+    
+    <!-- Application Logic Modules -->
+    <script src="/static/js/crypto/e2ee.js"></script>
+    <script src="/static/js/crypto/recovery.js"></script>
+    <script src="/static/js/storage.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/ui.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
